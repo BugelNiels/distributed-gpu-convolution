@@ -1,2 +1,116 @@
-# distributed-gpu-convolution
-This repository contains a framework with a GPU implementation of generalized convolution operators. The framework is designed for large image data sets and can run in a distributed system.
+<br />
+<p align="center">
+  <h1 align="center">Generalized Convolution Operators</h1>
+
+  <p align="center">
+    A fast distributed GPU-based convolution algorithm using CUDA, MPI and pthreads.
+  </p>
+</p>
+
+## About The Project
+
+Common image processing operators such as Gaussian blurring, certain edge detectors, dilations and erosions can all be expressed as convolutions. Performing convolutions on large image data sets takes a significant amount of time. To improve the performance of these operators, parallelization strategies can be employed. We propose GenConv: a framework that can run in a distributed setup and makes use of CUDA to perform convolution operators on the GPU. It provides the ability to do convolutions, dilations and erosions. The programmer can chain and customize these operations in any way they see fit.
+
+## Getting Started
+
+To get a local copy up and running follow these simple steps.
+
+### Prerequisites
+
+You need to the following to be able to compile and run the project
+
+* [Make](https://www.gnu.org/software/make/)
+* [CUDA](https://developer.nvidia.com/cuda-toolkit)
+* [MPI](https://www.open-mpi.org/)
+
+### Setup
+
+To set up the program, run the following commands:
+```sh
+    git clone git@github.com:BugelNiels/distributed-gpu-convolution.git
+    cd distributed-gpu-convolution.git
+```
+
+### Compilation
+
+The compilation is done via Make:
+```sh
+make
+```
+
+The makefile takes two optional argumens:
+```sh
+make RELEASE=1
+```
+Will create a release build of the program. The default is a debug build.
+```sh
+make KERNEL_SCRIPT=processingScripts/processing.cu
+```
+This will set the processing script to use to be `src/cuda/processingScripts/processing.cu`. This is useful for when multiple scripts are present and you want to switch between them on consecutive runs. Note that only one processing script can be used at the time.
+
+All of these optional arguments can be used at the same time.
+
+### Running
+
+#### SLURM
+
+To run the program on a slurm cluster you can look at one of the `benchmark.sh` scripts for inspiration. Provided the configuration is correct, you can use:
+
+```sh
+srun ./conv job.txt outputdir
+```
+
+#### Single machine
+
+You can run the project on a single machine as follows
+
+```sh
+mpirun -np 1 ./conv job.txt outputDir
+```
+
+Alternatively it can also be run without MPI:
+
+```sh
+./conv job.txt outputDir
+```
+
+# Job files
+
+GenConv uses a custom format job file that contains some basic information about the type of images that is received and which images to process. The file follows the following format:
+```
+3
+8
+256 256
+0 0
+inputImages/image1.pgm
+inputImages/image2.pgm
+inputImages/image3.pgm
+```
+The first line indicates the number of images to process. The second line states the number of bits used for each pixel (the dynamic range). The third line indicates the maximum dimensions any given image in the job can have. The fourth line indicates how many pixels are padded on the side of each dimension. Next are all the images that should be processed.
+
+As of now, only `.pgm` images are supported. The implementation was done in such a way that the addition of additional image formats is very straightforward.
+
+# Kernels
+
+The application supports very simple convolution kernel formats. These follow the following format:
+```
+3 3
+0 1 0
+1 -4 1
+0 1 0
+```
+The first line indicates the `width`x`height` of the kernel. Next are `height` lines with on each line `width` elements of the kernel.
+
+# Making changes to the Image Processing
+
+The processing steps the programming does is defined in `src/cuda/processingScripts/processing.cu`. You can either alter this file or add a new file and pass this file as a make argument.
+
+Image processing is often a matter of connecting small lego blocks in any way that your use case sees fit. This is impossible to do via a configuration system without significant performance penalties. As such, it is up to the programmer to define the sequence of operations they want to do. A very basic understanding of CUDA is required to achieve optimal performance here.
+
+When making changes to the script, the `cudaConfig.h` in `src/configs` should be updated accordingly. In particular the maximum kernel dimensions. CUDA needs to know this, because constant memory cannot be dynamically allocated at runtime.
+
+Ideally, the only two places the programmer ever needs to change things is in their processing script and a slight update to the `cudaConfig.h` to accomodate for any kernels they might use.
+
+# Splitter & Combiner
+
+The application also compiles to additional executables: `splitter` and `combiner`. The `splitter` can be used to either split a single image into multiple smaller tiles (optionally with padding). The `combiner` can be used to combine tiles into a single image again. Note that the combiner requires the input tiles to follow the same naming convention as the tiles generated by the splitted.
