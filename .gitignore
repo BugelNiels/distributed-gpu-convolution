@@ -8,7 +8,6 @@ combiner
 build/
 inputTiles*/
 outputTiles*/
-images/
 gmon.out
 *.pgm
 test.txt
