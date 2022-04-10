@@ -16,10 +16,9 @@ __constant__ int constkernel1[MAX_KERNEL_WIDTH * MAX_KERNEL_HEIGHT];
  * @param height Height of the output image.
  */
 template <typename pixel>
-void processImage(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, const pixel *input, pixel *output,
+void processImage(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, pixel *input, pixel *output,
                   const Kernel *kernels, int width, int height) {
   convolution2D<pixel, DILATION><<<dim_grid, dim_block, 0, stream>>>(input, output, kernels[0], width, height, false);
-
   // Executing: Add other kernels here if you need them
 }
 
@@ -73,11 +72,9 @@ Kernel *setUpKernels() {
 void freeKernels(Kernel *kernels) { free(kernels); }
 
 // Explicit template declerations to prevent having to do stuff in the header file
-template void processImage<uint8_t>(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block,
-                                    const uint8_t *input, uint8_t *output, const Kernel *kernels, int width,
-                                    int height);
-template void processImage<uint16_t>(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block,
-                                     const uint16_t *input, uint16_t *output, const Kernel *kernels, int width,
-                                     int height);
-template void processImage<int>(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, const int *input,
-                                int *output, const Kernel *kernels, int width, int height);
+template void processImage<uint8_t>(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, uint8_t *input,
+                                    uint8_t *output, const Kernel *kernels, int width, int height);
+template void processImage<uint16_t>(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, uint16_t *input,
+                                     uint16_t *output, const Kernel *kernels, int width, int height);
+template void processImage<int>(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, int *input, int *output,
+                                const Kernel *kernels, int width, int height);

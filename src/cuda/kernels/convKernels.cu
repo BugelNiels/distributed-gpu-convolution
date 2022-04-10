@@ -36,6 +36,8 @@ __global__ void convolution2D(const pixel *__restrict__ input, pixel *output, co
 
   int padTileWidth = BLOCK_WIDTH + kernelWidth - 1;
 
+  const int padVal = (op == EROSION) ? pow(2, 8 * sizeof(pixel)) - 1 : 0;
+
   if (padded) {
     // padding is assumed to be kernelWidth - 1
     int pixelWidth = width + kernelWidth - 1;
@@ -57,7 +59,7 @@ __global__ void convolution2D(const pixel *__restrict__ input, pixel *output, co
       for (int x = tx; x < BLOCK_WIDTH + kernelWidth - 1; x += BLOCK_WIDTH) {
         int inputVal;
         if (fx < 0 || fx >= width || fy < 0 || fy >= height) {
-          inputVal = 0;
+          inputVal = padVal;
         } else {
           inputVal = input[fy * width + fx];
         }
@@ -70,19 +72,23 @@ __global__ void convolution2D(const pixel *__restrict__ input, pixel *output, co
 
   __syncthreads();
 
-  int val = 0;
+  int val = padVal;
   int kernelIdx = 0;
   for (int ky = 0; ky < kernelHeight; ky++) {
     int tileIdxY = (ky + ty) * padTileWidth;
     for (int kx = 0; kx < kernelWidth; kx++) {
       // Using templating for the "kind" of convolution allows the compiler to remove this if-statement at compile time
       int tileIdx = tileIdxY + kx + tx;
-      if (op == CONVOLUTION) {
-        val += paddedTile[tileIdx] * kernel.elems[kernelIdx++];
-      } else if (op == DILATION) {
-        val = MAX(val, paddedTile[tileIdx] + kernel.elems[kernelIdx++]);
-      } else if (op == EROSION) {
-        val = MIN(val, paddedTile[tileIdx] - kernel.elems[kernelIdx++]);
+      switch (op) {
+        case CONVOLUTION:
+          val += paddedTile[tileIdx] * kernel.elems[kernelIdx++];
+          break;
+        case DILATION:
+          val = MAX(val, paddedTile[tileIdx] + kernel.elems[kernelIdx++]);
+          break;
+        case EROSION:
+          val = MIN(val, paddedTile[tileIdx] + kernel.elems[kernelIdx++]);
+          break;
       }
     }
   }

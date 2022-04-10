@@ -25,7 +25,7 @@ extern "C" {
  * @param height Height of the output image.
  */
 template <typename pixel>
-void processImage(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, const pixel *input, pixel *output,
+void processImage(cudaStream_t stream, const dim3 dim_grid, const dim3 dim_block, pixel *input, pixel *output,
                   const Kernel *kernels, int width, int height);
 
 /**
