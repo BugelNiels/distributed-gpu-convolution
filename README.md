@@ -156,7 +156,7 @@ Modern (NVIDIA) GPUs have three separate queues: one Copy Engine for copying fro
 
 We can use multiple CUDA streams to reduce the amount of idling of the different engines. Each stream is created on a separate thread to ensure that the saving and loading does not unnecessarily block the execution of the other streams. Using multiple streams on seperate threads helps in hiding some of the latency incurred by the copy engines:
 
-![Flow 2](images/readme/flow3.png)
+![Flow 3](images/readme/flow3.png)
 
 ### Asynchronous IO
 
@@ -184,7 +184,7 @@ All the main thread does is then:
 
 This process is considerably faster than the previous approaches, as it makes better use of the available CPU cores. The whole process using 4 threads, 2 CUDA streams and 6 buffers looks roughly as follows:
 
-![Flow 2](images/readme/flow3.png)
+![Flow 4](images/readme/flow4.png)
 
 > Note that this presents an idealized scenario, which is not entirely accurate. In reality, the async IO approach is roughly twice as fast as the basic parallel IO with CUDA streams approach.
 
